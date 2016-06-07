@@ -3,56 +3,77 @@
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
+# Start TensorFlow Interactive Session
 sess = tf.InteractiveSession()
-mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+
+# Load sample MNIST data from online public repository
+mnist = input_data.read_data_sets("MNIST_data", one_hot=True)
 
 # W ==> Tensor ... y = softmax(Wx + b)
 # My apologies, normal text is not exaclty meant for complex maths equations
 
+# Building Softmax Regression Model
 x = tf.placeholder(tf.float32, [None, 784])
 y_ = tf.placeholder("float", shape=[None, 10])
 
+# W --> Weights :: b --> Biases
 W = tf.Variable(tf.zeros([784, 10]))
 b = tf.Variable(tf.zeros([10]))
 
-sess.run(tf.initialize_all_variables)
+# Initialize the Variables in the system memory. Create required Tensors
+# (Vectors)
+sess.run(tf.initialize_all_variables())
 
+# Softmax regressional predection classes and cost/weight functions
+# (mathematical functions)
 y = tf.nn.softmax(tf.matmul(x, W) + b)
 
+# Cross entropy for minimilizing training data input requirement
 cross_entropy = -tf.reduce_sum(y_*tf.log(y))
 
-# training
-
+# Start training part of Machine Learning (Deeplearning)
 train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy)
 
 for i in range(1000):
+    # Training steps in batches of 100 samples per iteration.
     batch = mnist.train.next_batch(50)
     train_step.run(feed_dict={x: batch[0], y_: batch[1]})
 
+
+# Evalute the Model.
+
+# Probability and predictions for predicting the probability of trained data.
+# to get the accuracy matrix to compare with tensors.
 correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
+# Evaluate the predicted accuracy and test data and print the % accuracy.
 print(accuracy.eval(feed_dict={x: mnist.test.images, y_: mnist.test.labels}))
 
 
 def weight_variable(shape):
+    # Weight initialization.
 
     initial = tf.truncated_normal(shape, stddev=0.1)
     return tf.Variable(initial)
 
 
 def bias_variable(shape):
+    # Bias variable. Basically to get the noise.
 
     initial = tf.constant(0.1, shape=shape)
     return tf.Variable(initial)
 
 
+# Convolution and pooling.
 def conv2d(x, W):
+    # 2D convolution matrix (tensor).
 
     return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
 
 def max_pool_2x2(x):
+    # Pooling a 2x2 Matrix ...
 
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
                           strides=[1, 2, 2, 1], padding='SAME')
@@ -68,6 +89,8 @@ h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
 h_pool1 = max_pool_2x2(h_conv1)
 
 # Second convolution layer
+# Build a deep network, second stacked layer.
+# This should have a 64 featured 5x5 Matrix variable.
 
 W_conv2 = weight_variable([5, 5, 32, 64])
 b_conv2 = bias_variable([64])
@@ -76,9 +99,13 @@ h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 h_pool2 = max_pool_2x2(h_conv2)
 
 # Densly connected layer
+# Connect the convoluted layers.
 W_fc1 = weight_variable([7 * 7 * 64, 1024])
 b_fc1 = bias_variable([1024])
 
+# Dropout: Reduce the overfitting. Usually beneficial for very large data sets
+# in a Neutral Networks.
+# The probability of a neuron is kept in the placeholder.
 h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])
 h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
@@ -87,6 +114,7 @@ keep_prob = tf.placeholder("float")
 h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
 # Readout
+# Add a softmax layer (regressional analysis)
 W_fc2 = weight_variable([1024, 10])
 b_fc2 = bias_variable([10])
 
